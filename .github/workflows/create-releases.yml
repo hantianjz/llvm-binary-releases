@@ -7,10 +7,6 @@ on:
         description: 'URL to the LLVM binary tar file'
         required: true
         type: string
-      tag_prefix:
-        description: 'Prefix for release tags (e.g., llvm-19.1.2)'
-        required: true
-        type: string
 
 permissions:
   contents: write  # Required for creating releases
@@ -38,6 +34,13 @@ jobs:
             -o ./output \
             "${{ github.event.inputs.binary_url }}"
 
+      - name: Read metadata
+        id: metadata
+        run: |
+          content=$(cat ./output/metadata.json)
+          echo "metadata=$content" >> $GITHUB_OUTPUT
+          echo "release_tag=$(jq -r .release_tag ./output/metadata.json)" >> $GITHUB_OUTPUT
+
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
@@ -48,9 +51,19 @@ jobs:
           makeLatest: false
           generateReleaseNotes: false
           removeArtifacts: true
-          tag: "${{ github.event.inputs.tag_prefix }}"
+          tag: "${{ steps.metadata.outputs.release_tag }}"
           body: |
-            LLVM binaries extracted from ${{ github.event.inputs.binary_url }}
+            LLVM binaries extracted from ${{ fromJson(steps.metadata.outputs.metadata).source_url }}
             
-            Source URL: ${{ github.event.inputs.binary_url }}
+            Version: ${{ fromJson(steps.metadata.outputs.metadata).version }}
+            Platform: ${{ fromJson(steps.metadata.outputs.metadata).platform }}
+            OS: ${{ fromJson(steps.metadata.outputs.metadata).os }}
+            
+            Extracted binaries:
+            ```
+            ${{ join(fromJson(steps.metadata.outputs.metadata).processed_binaries, '\n') }}
+            ```
+            
+            Source URL: ${{ fromJson(steps.metadata.outputs.metadata).source_url }}
+            Extraction Date: ${{ fromJson(steps.metadata.outputs.metadata).extraction_date }}
             Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

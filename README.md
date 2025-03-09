@@ -64,21 +64,24 @@ The repository includes a GitHub workflow that can automatically create releases
 2. Select "Create LLVM Binary Releases"
 3. Click "Run workflow"
 4. Enter:
-   - **Binary URL**: URL to the LLVM release package
-   - **Tag Prefix**: Tag for the release (e.g., "llvm-19.1.2")
+   - **Binary URL**: URL to the LLVM release package (e.g., "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.2/LLVM-19.1.2-macOS-ARM64.tar.xz")
 5. Click "Run workflow"
 
 The workflow will:
 1. Run on Ubuntu Linux (GitHub's standard runner)
-2. Extract the specified binaries
-3. Create a GitHub release
-4. Upload the binaries as release assets
+2. Extract version, platform, and OS information from the URL
+3. Extract the specified binaries
+4. Create a GitHub release
+5. Upload the binaries as release assets
 
 ### Release Structure
 
 The workflow creates a release with:
-- Tag: The specified tag prefix
+- Tag format: `llvm-{version}-{platform}-{os}`
+  - Example: `llvm-19.1.2-arm64-darwin`
 - Release notes containing:
+  - Version information
+  - Platform and OS details
   - Source URL
   - Workflow reference
 - All extracted binaries as release assets
