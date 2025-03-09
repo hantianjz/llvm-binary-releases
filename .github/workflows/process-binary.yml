@@ -1,0 +1,29 @@
+name: Process LLVM Binary
+
+on:
+  workflow_dispatch:
+    inputs:
+      binary_url:
+        description: 'URL to the LLVM binary tar file'
+        required: true
+        type: string
+
+jobs:
+  process-binary:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Download and Process Binary
+        env:
+          BINARY_URL: ${{ github.event.inputs.binary_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./scripts/process_binary.sh "$BINARY_URL"
