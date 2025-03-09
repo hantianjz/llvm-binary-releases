@@ -1,0 +1,53 @@
+name: Create LLVM Binary Releases
+
+on:
+  workflow_dispatch:
+    inputs:
+      binary_url:
+        description: 'URL to the LLVM binary tar file'
+        required: true
+        type: string
+      tag_prefix:
+        description: 'Prefix for release tags (e.g., llvm-19.1.2)'
+        required: true
+        type: string
+
+jobs:
+  extract-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Extract binaries
+        run: |
+          python scripts/process_binary.py \
+            -o ./output \
+            "${{ github.event.inputs.binary_url }}"
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          omitBodyDuringUpdate: true
+          artifacts: "output/*"
+          artifactErrorsFailBuild: true
+          makeLatest: false
+          generateReleaseNotes: false
+          removeArtifacts: true
+          tag: "${{ github.event.inputs.tag_prefix }}"
+          body: |
+            LLVM binaries extracted from ${{ github.event.inputs.binary_url }}
+            
+            Source URL: ${{ github.event.inputs.binary_url }}
+            Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
