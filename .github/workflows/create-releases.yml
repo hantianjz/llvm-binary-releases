@@ -34,12 +34,21 @@ jobs:
             -o ./output \
             "${{ github.event.inputs.binary_url }}"
 
-      - name: Read metadata
-        id: metadata
+      # Save metadata as step outputs
+      - name: Process metadata
+        id: meta
         run: |
-          content=$(cat ./output/metadata.json)
-          echo "metadata=$content" >> $GITHUB_OUTPUT
-          echo "release_tag=$(jq -r .release_tag ./output/metadata.json)" >> $GITHUB_OUTPUT
+          # Get release tag
+          echo "tag=$(jq -r .release_tag ./output/metadata.json)" >> $GITHUB_OUTPUT
+          # Get version info
+          echo "version=$(jq -r .version ./output/metadata.json)" >> $GITHUB_OUTPUT
+          echo "platform=$(jq -r .platform ./output/metadata.json)" >> $GITHUB_OUTPUT
+          echo "os=$(jq -r .os ./output/metadata.json)" >> $GITHUB_OUTPUT
+          echo "date=$(jq -r .extraction_date ./output/metadata.json)" >> $GITHUB_OUTPUT
+          # Get binaries list
+          echo "binaries=$(jq -r '.processed_binaries | join("\n")' ./output/metadata.json)" >> $GITHUB_OUTPUT
+          # Remove metadata from output directory
+          rm ./output/metadata.json
 
       - name: Create Release
         uses: ncipollo/release-action@v1
@@ -51,19 +60,19 @@ jobs:
           makeLatest: false
           generateReleaseNotes: false
           removeArtifacts: true
-          tag: "${{ steps.metadata.outputs.release_tag }}"
+          tag: "${{ steps.meta.outputs.tag }}"
           body: |
-            LLVM binaries extracted from ${{ fromJson(steps.metadata.outputs.metadata).source_url }}
+            LLVM binaries extracted from ${{ github.event.inputs.binary_url }}
             
-            Version: ${{ fromJson(steps.metadata.outputs.metadata).version }}
-            Platform: ${{ fromJson(steps.metadata.outputs.metadata).platform }}
-            OS: ${{ fromJson(steps.metadata.outputs.metadata).os }}
+            Version: ${{ steps.meta.outputs.version }}
+            Platform: ${{ steps.meta.outputs.platform }}
+            OS: ${{ steps.meta.outputs.os }}
             
             Extracted binaries:
             ```
-            ${{ join(fromJson(steps.metadata.outputs.metadata).processed_binaries, '\n') }}
+            ${{ steps.meta.outputs.binaries }}
             ```
             
-            Source URL: ${{ fromJson(steps.metadata.outputs.metadata).source_url }}
-            Extraction Date: ${{ fromJson(steps.metadata.outputs.metadata).extraction_date }}
+            Source URL: ${{ github.event.inputs.binary_url }}
+            Extraction Date: ${{ steps.meta.outputs.date }}
             Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
