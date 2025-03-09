@@ -12,6 +12,9 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: write  # Required for creating releases
+
 jobs:
   extract-and-release:
     runs-on: ubuntu-latest
