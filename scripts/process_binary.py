@@ -68,19 +68,21 @@ class LLVMBinaryProcessor:
         version = version_match.group(1) if version_match else "unknown"
         
         # Extract platform info
-        if 'ARM64' in self.binary_url:
+        url_upper = self.binary_url.upper()
+        if 'ARM64' in url_upper:
             platform = 'arm64'
-        elif 'x86_64' in self.binary_url:
+        elif 'X86_64' in url_upper or 'X64' in url_upper:
             platform = 'x86_64'
         else:
             platform = 'unknown'
         
         # Extract OS info
-        if 'macOS' in self.binary_url:
+        url_lower = self.binary_url.lower()
+        if 'macos' in url_lower:
             os_name = 'darwin'
-        elif 'linux' in self.binary_url:
+        elif 'linux' in url_lower:
             os_name = 'linux'
-        elif 'windows' in self.binary_url.lower():
+        elif 'windows' in url_lower or 'win64' in url_lower:
             os_name = 'windows'
         else:
             os_name = 'unknown'
