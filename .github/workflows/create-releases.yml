@@ -45,10 +45,6 @@ jobs:
           echo "platform=$(jq -r .platform ./output/metadata.json)" >> "$GITHUB_OUTPUT"
           echo "os=$(jq -r .os ./output/metadata.json)" >> "$GITHUB_OUTPUT"
           echo "date=$(jq -r .extraction_date ./output/metadata.json)" >> "$GITHUB_OUTPUT"
-          # Get binaries list
-          echo "binaries=$(jq -r '.processed_binaries | join("\n")' ./output/metadata.json)" >> "$GITHUB_OUTPUT"
-          # Remove metadata from output directory
-          rm ./output/metadata.json
 
       - name: Create Release
         uses: ncipollo/release-action@v1
@@ -67,11 +63,6 @@ jobs:
             Version: ${{ steps.meta.outputs.version }}
             Platform: ${{ steps.meta.outputs.platform }}
             OS: ${{ steps.meta.outputs.os }}
-            
-            Extracted binaries:
-            ```
-            ${{ steps.meta.outputs.binaries }}
-            ```
             
             Source URL: ${{ github.event.inputs.binary_url }}
             Extraction Date: ${{ steps.meta.outputs.date }}
