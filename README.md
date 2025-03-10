@@ -2,6 +2,8 @@
 
 This repository provides individual LLVM binaries extracted from official LLVM releases. Instead of downloading the complete LLVM distribution (which can be several gigabytes), you can download just the specific binary tools you need.
 
+This project is inspired by https://github.com/muttleyxd/clang-tools-static-binaries but without building it locally.
+
 ## Currently Available Binaries
 
 ### Analysis tools
