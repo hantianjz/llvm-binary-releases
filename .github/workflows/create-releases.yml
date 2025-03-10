@@ -39,16 +39,14 @@ jobs:
         id: meta
         run: |
           # Get release tag
-          echo "tag=$(jq -r .release_tag ./output/metadata.json)" >> $GITHUB_OUTPUT
+          echo "tag=$(jq -r .release_tag 'output/metadata.json')" >> $GITHUB_OUTPUT
           # Get version info
-          echo "version=$(jq -r .version ./output/metadata.json)" >> $GITHUB_OUTPUT
-          echo "platform=$(jq -r .platform ./output/metadata.json)" >> $GITHUB_OUTPUT
-          echo "os=$(jq -r .os ./output/metadata.json)" >> $GITHUB_OUTPUT
-          echo "date=$(jq -r .extraction_date ./output/metadata.json)" >> $GITHUB_OUTPUT
+          echo "version=$(jq -r .version 'output/metadata.json')" >> $GITHUB_OUTPUT
+          echo "platform=$(jq -r .platform 'output/metadata.json')" >> $GITHUB_OUTPUT
+          echo "os=$(jq -r .os 'output/metadata.json')" >> $GITHUB_OUTPUT
+          echo "date=$(jq -r .extraction_date 'output/metadata.json')" >> $GITHUB_OUTPUT
           # Get binaries list
-          echo "binaries=$(jq -r '.processed_binaries | join("\n")' ./output/metadata.json)" >> $GITHUB_OUTPUT
-          # Remove metadata from output directory
-          rm ./output/metadata.json
+          echo "binaries=$(jq -r '.processed_binaries | join("\n")' 'output/metadata.json')" >> $GITHUB_OUTPUT
 
       - name: Create Release
         uses: ncipollo/release-action@v1
