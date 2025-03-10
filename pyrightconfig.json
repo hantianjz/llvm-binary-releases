@@ -1,0 +1,11 @@
+{
+  "exclude": [
+  ],
+  "pythonVersion": "3.13",
+  "venvPath": ".venv",
+  "venv": "python",
+  "typeCheckingMode": "on",
+  "reportPrivateImportUsage": false,
+  "reportUndefinedVariable": "error"
+}
+
