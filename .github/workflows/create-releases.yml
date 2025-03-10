@@ -30,28 +30,34 @@ jobs:
 
       - name: Extract binaries
         run: |
+          # Create a clean directory for release artifacts
+          mkdir -p release_artifacts
+          
+          # Extract binaries to output dir
           python scripts/process_binary.py \
             -o ./output \
             "${{ github.event.inputs.binary_url }}"
+          
+          # Move only the binaries and metadata to release directory
+          mv output/* release_artifacts/
 
-      # Save metadata as step outputs
-      - name: Process metadata
+      - name: Read metadata
         id: meta
         run: |
           # Get release tag
-          echo "tag=$(jq -r .release_tag ./output/metadata.json)" >> "$GITHUB_OUTPUT"
+          echo "tag=$(jq -r .release_tag ./release_artifacts/metadata.json)" >> $GITHUB_OUTPUT
           # Get version info
-          echo "version=$(jq -r .version ./output/metadata.json)" >> "$GITHUB_OUTPUT"
-          echo "platform=$(jq -r .platform ./output/metadata.json)" >> "$GITHUB_OUTPUT"
-          echo "os=$(jq -r .os ./output/metadata.json)" >> "$GITHUB_OUTPUT"
-          echo "date=$(jq -r .extraction_date ./output/metadata.json)" >> "$GITHUB_OUTPUT"
+          echo "version=$(jq -r .version ./release_artifacts/metadata.json)" >> $GITHUB_OUTPUT
+          echo "platform=$(jq -r .platform ./release_artifacts/metadata.json)" >> $GITHUB_OUTPUT
+          echo "os=$(jq -r .os ./release_artifacts/metadata.json)" >> $GITHUB_OUTPUT
+          echo "date=$(jq -r .extraction_date ./release_artifacts/metadata.json)" >> $GITHUB_OUTPUT
 
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
           omitBodyDuringUpdate: true
-          artifacts: "output/*"
+          artifacts: "./release_artifacts/*"
           artifactErrorsFailBuild: true
           makeLatest: false
           generateReleaseNotes: false
@@ -64,6 +70,5 @@ jobs:
             Platform: ${{ steps.meta.outputs.platform }}
             OS: ${{ steps.meta.outputs.os }}
             
-            Source URL: ${{ github.event.inputs.binary_url }}
             Extraction Date: ${{ steps.meta.outputs.date }}
             Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
