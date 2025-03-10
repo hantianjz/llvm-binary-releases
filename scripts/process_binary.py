@@ -46,6 +46,8 @@ class LLVMBinaryProcessor:
                 line = line.strip()
                 if line and not line.startswith('#'):
                     binaries.add(line)
+                    # Also add .exe version for Windows
+                    binaries.add(f"{line}.exe")
         return binaries
 
     def get_cache_filename(self) -> Path:
@@ -78,6 +80,8 @@ class LLVMBinaryProcessor:
             os_name = 'darwin'
         elif 'linux' in self.binary_url:
             os_name = 'linux'
+        elif 'windows' in self.binary_url.lower():
+            os_name = 'windows'
         else:
             os_name = 'unknown'
             
@@ -142,20 +146,38 @@ class LLVMBinaryProcessor:
 
     def is_binary_file(self, path: Path) -> bool:
         """Check if a file is a binary executable."""
-        if not path.is_file() or not os.access(path, os.X_OK):
+        if not path.is_file():
+            return False
+            
+        # For Windows executables
+        if path.suffix.lower() == '.exe':
+            return True
+            
+        # For Unix executables
+        if not os.access(path, os.X_OK):
             return False
             
         # Use 'file' command to check if it's a binary
         result = subprocess.run(['file', path], capture_output=True, text=True)
         return 'text' not in result.stdout.lower()
 
+    def matches_binary_filter(self, path: Path) -> bool:
+        """Check if a binary matches our filter list."""
+        if not self.binary_filter:
+            return True
+            
+        name = path.name
+        # Check both with and without .exe
+        return (name in self.binary_filter or
+                (name.endswith('.exe') and name[:-4] in self.binary_filter) or
+                (not name.endswith('.exe') and f"{name}.exe" in self.binary_filter))
+
     def find_binaries(self, directory: Path) -> Set[Path]:
         """Find all binary files in the directory."""
         binaries = set()
         for item in directory.rglob('*'):
-            if self.is_binary_file(item):
-                if not self.binary_filter or item.name in self.binary_filter:
-                    binaries.add(item)
+            if self.is_binary_file(item) and self.matches_binary_filter(item):
+                binaries.add(item)
         return binaries
 
     def list_binaries(self, directory: Path):
@@ -163,11 +185,14 @@ class LLVMBinaryProcessor:
         print("Available binaries:")
         binaries = sorted(b.name for b in self.find_binaries(directory))
         for binary in binaries:
-            print(f"  {binary}")
+            # Strip .exe for display if present
+            display_name = binary[:-4] if binary.lower().endswith('.exe') else binary
+            print(f"  {display_name}")
+            
         if self.binary_filter:
             print("\nFiltered binaries (from binaries.txt):")
-            for binary in sorted(self.binary_filter):
-                status = "✓" if binary in binaries else "✗"
+            for binary in sorted(b for b in self.binary_filter if not b.endswith('.exe')):
+                status = "✓" if binary in binaries or f"{binary}.exe" in binaries else "✗"
                 print(f"  {status} {binary}")
 
     def process_binary(self, binary_path: Path):
@@ -200,12 +225,16 @@ class LLVMBinaryProcessor:
                 print("No matching binaries found!")
                 if self.binary_filter:
                     print("\nRequested binaries (from binaries.txt):")
-                    for binary in sorted(self.binary_filter):
+                    for binary in sorted(b for b in self.binary_filter if not b.endswith('.exe')):
                         print(f"  ✗ {binary}")
                 return
                 
             # Add processed binaries to metadata
-            metadata["processed_binaries"] = sorted([b.name for b in binaries])
+            # Strip .exe from display names but keep original names in processing
+            metadata["processed_binaries"] = sorted([
+                b.name[:-4] if b.name.lower().endswith('.exe') else b.name 
+                for b in binaries
+            ])
             
             # Save metadata
             with open(self.output_dir / "metadata.json", "w") as f:
